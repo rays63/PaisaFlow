@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:ui' show Rect;
 
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:intl/intl.dart';
 import 'package:spreadsheet_decoder/spreadsheet_decoder.dart';
 import 'package:syncfusion_flutter_pdf/pdf.dart' as sfpdf;
@@ -112,7 +113,9 @@ class ImportParser {
       );
     }
     final source = detectSource(text);
-    final (records, ignored) = _statementRecords(text, bookId, 'PDF');
+    final (records, ignored) = source == nmb
+        ? _nmbRecords(text, bookId)
+        : _statementRecords(text, bookId, 'PDF');
     if (records.isEmpty) {
       final (rows, lines) = _parseText(
         bookId: bookId,
@@ -190,7 +193,9 @@ class ImportParser {
     }
     final head = rows.take(12).map((row) => row.join('\n')).join('\n');
     final source = detectSource(head);
-    final (records, ignored) = _tableRecords(rows, bookId, 'XLS');
+    final (records, ignored) = source == khalti
+        ? _khaltiRecords(rows, bookId)
+        : _tableRecords(rows, bookId, 'XLS');
     final parsed = _withSource(records, source);
     final (opening, closing) = statementBalances(parsed);
     return ParsedStatement(
@@ -225,6 +230,9 @@ class ImportParser {
   static const nicAsia = 'NIC Asia';
   static const nabil = 'Nabil Bank';
   static const standardChartered = 'Standard Chartered';
+  static const globalIme = 'Global IME Bank';
+  static const nmb = 'NMB Bank';
+  static const khalti = 'Khalti';
 
   /// Which bank or wallet a statement came from, recognised by its layout
   /// (the bank's name is rarely in the text, and transaction remarks often
@@ -242,6 +250,15 @@ class ImportParser {
       if (has('account name:') && has('debit') && has('credit')) {
         return nicAsia;
       }
+      if (has('txn date') && has('remarks') && has('accrued interest')) {
+        return globalIme;
+      }
+    }
+    if (has("nmb bank") || (has('a/c type') && has('credit int. rate'))) {
+      return nmb;
+    }
+    if (has('transaction id') && has('amount(-) rs') && has('amount(+) rs')) {
+      return khalti;
     }
     if (has('account type') && has('ledger balance') && has('withdrawal')) {
       return standardChartered;
@@ -304,12 +321,17 @@ class ImportParser {
 
   static LedgerTransaction _tidyRow(LedgerTransaction row, String? source) {
     final raw = row.title.replaceAll(RegExp(r'\s+'), ' ').trim();
-    final title = cleanDescription(raw);
+    final title = cleanDescription(raw, type: row.type);
     return row.copyWith(
       title: title,
       notes: title == raw ? row.notes : raw,
       paymentMode: source ?? row.paymentMode,
-      category: suggestCategory(raw, row.type) ?? row.category,
+      // The cleaned title too: some banks run a remark into a reference
+      // ("Utilities2WDGLS66QR9"), hiding the keyword in the raw text.
+      category:
+          suggestCategory(raw, row.type) ??
+          suggestCategory(title, row.type) ??
+          row.category,
     );
   }
 
@@ -369,6 +391,10 @@ class ImportParser {
         continue;
       }
 
+      // Global IME and others print a value date right after the date.
+      if (description.isEmpty && run.isEmpty && _statementDate(token) != null) {
+        continue;
+      }
       final amount = token == '-' ? 0.0 : _statementAmount(token);
       if (amount == null) {
         run.forEach(description.write);
@@ -408,6 +434,162 @@ class ImportParser {
         );
       }
       date = null;
+    }
+    return (parsed, ignored);
+  }
+
+  /// NMB Bank PDFs: a date, a value date, description lines, then the
+  /// amount and the balance. The empty Debit or Credit cell is left out of
+  /// the text, so which one the amount was is read from the balance chain,
+  /// starting at the summary's "Opening Balance". Rows are newest first.
+  @visibleForTesting
+  static (List<LedgerTransaction>, List<String>) nmbRecords(
+    String text,
+    String bookId,
+  ) => _nmbRecords(text, bookId);
+
+  static (List<LedgerTransaction>, List<String>) _nmbRecords(
+    String text,
+    String bookId,
+  ) {
+    final records =
+        <({DateTime date, String title, double amount, double balance})>[];
+    final ignored = <String>[];
+    final date = RegExp(r'^\d{1,2}-[A-Za-z]{3}-\d{4}$');
+    final number = RegExp(r'^[\d,]+\.\d{2}$');
+    DateTime? day;
+    var valueDate = false;
+    final description = StringBuffer();
+    final values = <double>[];
+    var inTable = false;
+    for (final raw in text.split(RegExp(r'\r?\n'))) {
+      final token = raw.trim();
+      if (token.isEmpty) continue;
+      if (token == 'Balance') {
+        inTable = true;
+        continue;
+      }
+      if (!inTable) continue;
+      if (token.startsWith('Transaction Summary')) break;
+      if (date.hasMatch(token)) {
+        if (day != null && !valueDate) {
+          valueDate = true;
+          continue;
+        }
+        day = _parseDate(token);
+        valueDate = false;
+        description.clear();
+        values.clear();
+        continue;
+      }
+      if (day == null) continue;
+      valueDate = true;
+      if (number.hasMatch(token)) {
+        values.add(_parseAmount(token) ?? double.nan);
+        if (values.length == 2) {
+          records.add((
+            date: day,
+            title: description
+                .toString()
+                .replaceAll(RegExp(r'\s+'), ' ')
+                .trim(),
+            amount: values[0],
+            balance: values[1],
+          ));
+          day = null;
+        }
+        continue;
+      }
+      description.write(raw);
+    }
+    final opening = RegExp(
+      r'Opening Balance\s*:\s*([\d,]+\.\d{2})',
+    ).firstMatch(text);
+    var previous = opening == null ? null : _parseAmount(opening.group(1)!);
+    // Oldest first, so each row's balance follows the one before it.
+    final chronological = records.reversed.toList();
+    final parsed = <LedgerTransaction>[];
+    for (final r in chronological) {
+      if (r.amount.isNaN || r.balance.isNaN) {
+        ignored.add('${r.title} | ${r.amount} | ${r.balance}');
+        continue;
+      }
+      // Without an opening balance the first row's direction is unknown;
+      // the balance minus the amount then decides (a balance that equals the
+      // amount means the account started empty, so money came in).
+      final cashIn = previous != null
+          ? r.balance > previous
+          : (r.balance - r.amount).abs() < .005;
+      parsed.add(
+        _transaction(
+          bookId: bookId,
+          title: r.title.isEmpty ? 'Imported transaction' : r.title,
+          amount: r.amount,
+          type: cashIn ? TransactionType.cashIn : TransactionType.cashOut,
+          date: r.date,
+          source: 'PDF',
+          sequence: parsed.length + 1,
+          balance: r.balance,
+        ),
+      );
+      previous = r.balance;
+    }
+    return (parsed, ignored);
+  }
+
+  /// Khalti's Excel export: one row per transaction, with separate
+  /// Amount(-) and Amount(+) columns. Only completed transactions count.
+  static (List<LedgerTransaction>, List<String>) _khaltiRecords(
+    List<List<String>> rows,
+    String bookId,
+  ) {
+    final parsed = <LedgerTransaction>[];
+    final ignored = <String>[];
+    final headerRow = rows.indexWhere(
+      (row) => row.any((c) => c.trim().toLowerCase() == 'transaction id'),
+    );
+    if (headerRow == -1) return (parsed, ignored);
+    final header = [for (final c in rows[headerRow]) c.trim().toLowerCase()];
+    String cell(List<String> row, String name) {
+      final i = header.indexOf(name);
+      return i >= 0 && i < row.length ? row[i].trim() : '';
+    }
+
+    // "Eventique Nepal (ellaevents711@gmail.com)" → "Eventique Nepal".
+    String party(String value) =>
+        value.replaceAll(RegExp(r'\s*\([^)]*\)\s*$'), '').trim();
+
+    for (final row in rows.skip(headerRow + 1)) {
+      if (row.every((c) => c.trim().isEmpty)) continue;
+      final out = _parseAmount(cell(row, 'amount(-) rs'));
+      final into = _parseAmount(cell(row, 'amount(+) rs'));
+      final date = _parseDate(
+        '${cell(row, 'transaction date')} ${cell(row, 'transaction time')}'
+            .trim(),
+      );
+      final state = cell(row, 'transaction state').toLowerCase();
+      final amount = (out ?? 0) > 0 ? out! : (into ?? 0);
+      if (date == null ||
+          amount <= 0 ||
+          (state.isNotEmpty && state != 'completed')) {
+        ignored.add(row.join(' | '));
+        continue;
+      }
+      final cashIn = !((out ?? 0) > 0);
+      final kind = cell(row, 'transaction type');
+      final other = party(cell(row, cashIn ? 'from' : 'to'));
+      final entry = _transaction(
+        bookId: bookId,
+        title: [kind, other].where((p) => p.isNotEmpty).join(' · '),
+        reference: cell(row, 'transaction id'),
+        amount: amount,
+        type: cashIn ? TransactionType.cashIn : TransactionType.cashOut,
+        date: date,
+        source: 'XLS',
+        sequence: parsed.length + 1,
+        balance: _parseAmount(cell(row, 'balance')),
+      );
+      parsed.add(entry.copyWith(notes: cell(row, 'description')));
     }
     return (parsed, ignored);
   }

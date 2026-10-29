@@ -20,8 +20,8 @@ Available in English and नेपाली.
   - **Repeating entries** and a loan **EMI calculator**. Due entries are listed for you to confirm when the app opens; nothing is added on its own.
 - **All entries and search:** one feed across accounts with month totals and filters, and search over titles, notes, amounts, references, tags and subcategories.
 - **Statement import:**
-  - Text-based PDF bank statements (NIC Asia, Nabil, Standard Chartered and similar), including password-protected PDFs.
-  - Legacy `.xls` / `.xlsx` / `.csv` wallet exports (eSewa).
+  - Text-based PDF bank statements (NIC Asia, Nabil, Global IME, NMB, Standard Chartered and similar), including password-protected PDFs.
+  - Legacy `.xls` / `.xlsx` / `.csv` wallet exports (eSewa, Khalti).
   - Several files at once, with one combined preview. Overlapping days are imported once, and a gap between two statements of the same account is flagged.
   - Duplicates are detected on re-import.
   - Each entry's payment mode is set to the bank or wallet it came from.

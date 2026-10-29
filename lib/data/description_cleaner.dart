@@ -1,12 +1,23 @@
+import 'models.dart';
+
 /// Turns a bank's raw transaction description into a short, readable title
 /// that starts with how the money moved, e.g.
 /// `QR PAYMENT-2308…ue2W, MEGA MART NAGAUN` → `QR · Mega Mart Nagaun`.
-/// Unknown descriptions only get their spacing tidied.
-String cleanDescription(String raw) {
+/// Unknown descriptions only get their spacing tidied. [type] picks the
+/// other person in descriptions that name both sides of a transfer.
+String cleanDescription(String raw, {TransactionType? type}) {
   final text = raw
       .replaceAll(RegExp(r'\s+'), ' ')
       .trim()
       .replaceAll(RegExp(r'[\s,|]+$'), '');
+  // Global IME mobile banking: "MOS:Trf to A from B:<purpose><ref>:…".
+  final transfer = _re(
+    r'^MOS:Trf to (.+?) from (.+?):(.*?)[0-9A-Z]{11}:\d+:\d+:\w+$',
+  ).firstMatch(text);
+  if (transfer != null) {
+    final other = type == TransactionType.cashIn ? transfer[2] : transfer[1];
+    return _join('Mobile banking', [other, transfer[3]]);
+  }
   for (final rule in _rules) {
     final match = rule.pattern.firstMatch(text);
     if (match != null) {
@@ -58,6 +69,31 @@ String _nice(String value) => value
     .join(' ');
 
 final _rules = <_Rule>[
+  // Global IME Fonepay QR: "FPS:FPQR:<id>:<n>:<phone>:<bank>:MERCHANT" with
+  // the remark ("111142-<ref>") run on.
+  _Rule(
+    _re(r'^FPS:FPQR:(?:[^:]*:){4}(.*?)(?:\d{6}-\S*)?$'),
+    (m) => _join('QR', [m[1]]).ifEmpty('QR payment'),
+  ),
+  // Global IME eSewa payments: "MOS:eSewa:<id>:<remark><ref>:<phone>:…".
+  _Rule(
+    _re(r'^MOS:eSewa:\d+:(.*?)[0-9A-Z]{11}:\d+:\d+:\w+$'),
+    (m) => _join('eSewa', [m[1]]).ifEmpty('eSewa payment'),
+  ),
+  _Rule(_re(r'^MOS:eSewa'), (_) => 'eSewa payment'),
+  // Global IME connectIPS: "CIPS/Others: <acct>/<via>/MERCHANT/<bank>…".
+  _Rule(
+    _re(r'^CIPS/[^:]*:\s*\d+/[^/]*/([^/]*)'),
+    (m) => _join('IPS', [m[1]]).ifEmpty('IPS transfer'),
+  ),
+  // Interest and the tax on it: "<account>:Int.Pd:…", "<account>:WTax.Pd:…".
+  _Rule(_re(r'^\d+:Int\.Pd:'), (_) => 'Interest'),
+  _Rule(_re(r'^\d+:WTax\.Pd:'), (_) => 'Tax on interest'),
+  // NMB Fonepay interbank: "FBS:IBFT:<id>:<n>:<bank>:NAME".
+  _Rule(
+    _re(r'^FBS:IBFT:(?:[^:]*:)*([^:]*)$'),
+    (m) => _join('Fonepay', [m[1]]).ifEmpty('Fonepay transfer'),
+  ),
   // NIC Asia QR: "QR PAYMENT-<id>, MERCHANT".
   _Rule(_re(r'^QR PAYMENT-\S*?,\s*(.*)$'), (m) => _join('QR', [m[1]])),
   _Rule(_re(r'^QR PAYMENT'), (_) => 'QR payment'),

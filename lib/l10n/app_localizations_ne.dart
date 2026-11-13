@@ -186,9 +186,6 @@ class AppLocalizationsNe extends AppLocalizations {
   String get seeAll => 'सबै';
 
   @override
-  String get calendar => 'पात्रो';
-
-  @override
   String get settings => 'सेटिङ';
 
   @override

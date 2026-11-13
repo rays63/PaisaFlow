@@ -386,12 +386,6 @@ abstract class AppLocalizations {
   /// **'See all'**
   String get seeAll;
 
-  /// No description provided for @calendar.
-  ///
-  /// In en, this message translates to:
-  /// **'Calendar'**
-  String get calendar;
-
   /// No description provided for @settings.
   ///
   /// In en, this message translates to:

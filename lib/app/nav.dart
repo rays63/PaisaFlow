@@ -4,7 +4,6 @@ import '../data/app_store.dart';
 import '../data/models.dart';
 import '../features/books/book_detail_screen.dart';
 import '../features/books/book_form_screen.dart';
-import '../features/calendar/calendar_screen.dart';
 import '../features/entries/all_entries_screen.dart';
 import '../features/entries/entry_detail_screen.dart';
 import '../features/entries/entry_form_screen.dart';
@@ -93,9 +92,6 @@ Future<void> openGoals(BuildContext context) =>
 
 Future<void> openNewGoal(BuildContext context) =>
     _push(context, const GoalFormScreen());
-
-Future<void> openCalendar(BuildContext context) =>
-    _push(context, const CalendarScreen());
 
 Future<void> openSettings(BuildContext context) =>
     _push(context, const SettingsScreen());

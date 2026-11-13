@@ -189,9 +189,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get seeAll => 'See all';
 
   @override
-  String get calendar => 'Calendar';
-
-  @override
   String get settings => 'Settings';
 
   @override

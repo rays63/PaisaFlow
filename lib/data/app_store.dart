@@ -86,6 +86,9 @@ class AppStore extends ChangeNotifier {
   /// next month; the calendar chart keeps real dates.
   int monthStartDay = 1;
 
+  /// Daily reminder time as minutes past midnight; null means off.
+  int? reminderMinutes;
+
   /// Categories the user taught by correcting an imported entry, keyed by
   /// its cleaned title in lowercase; later imports of the same title start
   /// with that category.
@@ -265,6 +268,7 @@ class AppStore extends ChangeNotifier {
         1,
         28,
       );
+      reminderMinutes = (data['reminderMinutes'] as num?)?.toInt();
       onboarded = data['onboarded'] as bool? ?? true;
       if (books.isEmpty) _seed();
     }
@@ -318,6 +322,7 @@ class AppStore extends ChangeNotifier {
     'subcategories': subcategories,
     'learnedCategories': learnedCategories,
     'monthStartDay': monthStartDay,
+    'reminderMinutes': ?reminderMinutes,
     'budgets': budgets.map((item) => item.toJson()).toList(),
     'profile': profile.toJson(),
     'defaultCurrency': defaultCurrency,
@@ -1229,6 +1234,11 @@ class AppStore extends ChangeNotifier {
               e.occurredAt.isBefore(end),
         )
         .fold(0.0, (s, e) => s + e.amount);
+  }
+
+  Future<void> setReminderMinutes(int? minutes) async {
+    reminderMinutes = minutes;
+    await _commit();
   }
 
   Future<void> setMonthStartDay(int day) async {

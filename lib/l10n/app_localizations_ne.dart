@@ -1282,6 +1282,30 @@ class AppLocalizationsNe extends AppLocalizations {
   }
 
   @override
+  String get settingsReminder => 'दैनिक रिमाइन्डर';
+
+  @override
+  String get reminderChangeTime => 'समय बदल्नुहोस्';
+
+  @override
+  String get reminderTitle => 'आजको खर्च';
+
+  @override
+  String get reminderBody => 'आज के खर्च भयो, एक मिनेट निकालेर टिप्नुहोस्।';
+
+  @override
+  String get reminderNoPermission =>
+      'फोनको सेटिङमा Paisa Flow का सूचना बन्द छन्।';
+
+  @override
+  String get reminderOffToast => 'दैनिक रिमाइन्डर बन्द गरियो';
+
+  @override
+  String reminderOnToast(String time) {
+    return 'दैनिक रिमाइन्डर $time मा सेट भयो';
+  }
+
+  @override
   String get settingsMonthStart => 'महिना सुरु हुने दिन';
 
   @override

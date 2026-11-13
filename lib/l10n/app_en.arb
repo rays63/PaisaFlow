@@ -1029,6 +1029,20 @@
       }
     }
   },
+  "settingsReminder": "Daily reminder",
+  "reminderChangeTime": "Change the time",
+  "reminderTitle": "Today's spending",
+  "reminderBody": "Take a minute to note what you spent today.",
+  "reminderNoPermission": "Notifications are off for Paisa Flow in the phone's settings.",
+  "reminderOffToast": "Daily reminder turned off",
+  "reminderOnToast": "Daily reminder set for {time}",
+  "@reminderOnToast": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
   "settingsMonthStart": "Month starts on",
   "settingsMonthStartValue": "Day {day}",
   "@settingsMonthStartValue": {

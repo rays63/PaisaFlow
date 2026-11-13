@@ -2083,6 +2083,48 @@ abstract class AppLocalizations {
   /// **'{count, plural, =1{1 item} other{{count} items}}'**
   String settingsItemCount(int count);
 
+  /// No description provided for @settingsReminder.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily reminder'**
+  String get settingsReminder;
+
+  /// No description provided for @reminderChangeTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Change the time'**
+  String get reminderChangeTime;
+
+  /// No description provided for @reminderTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Today\'s spending'**
+  String get reminderTitle;
+
+  /// No description provided for @reminderBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Take a minute to note what you spent today.'**
+  String get reminderBody;
+
+  /// No description provided for @reminderNoPermission.
+  ///
+  /// In en, this message translates to:
+  /// **'Notifications are off for Paisa Flow in the phone\'s settings.'**
+  String get reminderNoPermission;
+
+  /// No description provided for @reminderOffToast.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily reminder turned off'**
+  String get reminderOffToast;
+
+  /// No description provided for @reminderOnToast.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily reminder set for {time}'**
+  String reminderOnToast(String time);
+
   /// No description provided for @settingsMonthStart.
   ///
   /// In en, this message translates to:

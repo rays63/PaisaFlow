@@ -1291,6 +1291,30 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get settingsReminder => 'Daily reminder';
+
+  @override
+  String get reminderChangeTime => 'Change the time';
+
+  @override
+  String get reminderTitle => 'Today\'s spending';
+
+  @override
+  String get reminderBody => 'Take a minute to note what you spent today.';
+
+  @override
+  String get reminderNoPermission =>
+      'Notifications are off for Paisa Flow in the phone\'s settings.';
+
+  @override
+  String get reminderOffToast => 'Daily reminder turned off';
+
+  @override
+  String reminderOnToast(String time) {
+    return 'Daily reminder set for $time';
+  }
+
+  @override
   String get settingsMonthStart => 'Month starts on';
 
   @override

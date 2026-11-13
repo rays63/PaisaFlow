@@ -1291,6 +1291,17 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get settingsMonthStart => 'Month starts on';
+
+  @override
+  String settingsMonthStartValue(int day) {
+    return 'Day $day';
+  }
+
+  @override
+  String get settingsMonthStartTitle => 'Count a month from day…';
+
+  @override
   String get settingsDefaultCurrency => 'Default currency for new accounts';
 
   @override

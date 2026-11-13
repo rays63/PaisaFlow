@@ -80,7 +80,7 @@ class _BudgetsScreenState extends State<BudgetsScreen> {
     final c = context.pf;
     final l = context.l10n;
     final now = DateTime.now();
-    final month = DateTime(now.year, now.month);
+    final month = store.periodAnchor(now);
     final cur = store.scopeCurrency(scope);
     final noAccounts = store.scopeAccounts(scope).isEmpty;
     final all = store.budgetsFor(scope);

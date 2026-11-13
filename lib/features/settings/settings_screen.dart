@@ -6,6 +6,7 @@ import '../../core/app_info.dart';
 import '../../data/app_store.dart';
 import '../../l10n/l10n.dart';
 import '../../theme/tokens.dart';
+import '../../widgets/option_sheet.dart';
 import '../../widgets/pf.dart';
 import '../../widgets/store_sheets.dart';
 import '../backup/backup_screen.dart';
@@ -139,6 +140,31 @@ class SettingsScreen extends StatelessWidget {
                       );
                       if (picked != null) {
                         await store.setDefaultCurrency(picked);
+                      }
+                    },
+                  ),
+                  const PfDivider(),
+                  _SettingsRow(
+                    icon: LucideIcons.calendarRange,
+                    label: l.settingsMonthStart,
+                    value: l.settingsMonthStartValue(store.monthStartDay),
+                    chevron: false,
+                    onTap: () async {
+                      final picked = await showOptionSheet<int>(
+                        context,
+                        title: l.settingsMonthStartTitle,
+                        selected: store.monthStartDay,
+                        options: () => [
+                          for (var day = 1; day <= 28; day++)
+                            SheetOption(
+                              day,
+                              l.settingsMonthStartValue(day),
+                              LucideIcons.calendarRange,
+                            ),
+                        ],
+                      );
+                      if (picked != null) {
+                        await store.setMonthStartDay(picked);
                       }
                     },
                   ),

@@ -53,8 +53,8 @@ class _BudgetEditScreenState extends State<BudgetEditScreen> {
   String? _firstFree() {
     final now = DateTime.now();
     double recent(String c) =>
-        store.budgetSpent(widget.scope, c, DateTime(now.year, now.month)) +
-        store.budgetHint(widget.scope, c, DateTime(now.year, now.month));
+        store.budgetSpent(widget.scope, c, store.periodAnchor(now)) +
+        store.budgetHint(widget.scope, c, store.periodAnchor(now));
     final free = [
       for (final c in store.categories)
         if (store.budgetFor(widget.scope, c) == null) c,
@@ -92,7 +92,7 @@ class _BudgetEditScreenState extends State<BudgetEditScreen> {
     final c = context.pf;
     final l = context.l10n;
     final now = DateTime.now();
-    final month = DateTime(now.year, now.month);
+    final month = store.periodAnchor(now);
     final cur = store.scopeCurrency(scope);
     final hint = store.budgetHint(scope, category, month);
     final spent = store.budgetSpent(scope, category, month);

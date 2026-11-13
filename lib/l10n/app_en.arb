@@ -1029,6 +1029,16 @@
       }
     }
   },
+  "settingsMonthStart": "Month starts on",
+  "settingsMonthStartValue": "Day {day}",
+  "@settingsMonthStartValue": {
+    "placeholders": {
+      "day": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsMonthStartTitle": "Count a month from day…",
   "settingsDefaultCurrency": "Default currency for new accounts",
   "settingsDefaultCurrencyTitle": "Default currency",
   "settingsExportAll": "Export all data",

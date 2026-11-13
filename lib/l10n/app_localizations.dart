@@ -2083,6 +2083,24 @@ abstract class AppLocalizations {
   /// **'{count, plural, =1{1 item} other{{count} items}}'**
   String settingsItemCount(int count);
 
+  /// No description provided for @settingsMonthStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Month starts on'**
+  String get settingsMonthStart;
+
+  /// No description provided for @settingsMonthStartValue.
+  ///
+  /// In en, this message translates to:
+  /// **'Day {day}'**
+  String settingsMonthStartValue(int day);
+
+  /// No description provided for @settingsMonthStartTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Count a month from day…'**
+  String get settingsMonthStartTitle;
+
   /// No description provided for @settingsDefaultCurrency.
   ///
   /// In en, this message translates to:

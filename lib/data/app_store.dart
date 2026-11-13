@@ -81,6 +81,11 @@ class AppStore extends ChangeNotifier {
   /// Second-level names under each category (Food → Lunch, Groceries…).
   final Map<String, List<String>> subcategories = {};
 
+  /// The day a money month begins (1–28), like a payday. Insights, budgets
+  /// and the Home figures count a month from this day to the day before it
+  /// next month; the calendar chart keeps real dates.
+  int monthStartDay = 1;
+
   /// Categories the user taught by correcting an imported entry, keyed by
   /// its cleaned title in lowercase; later imports of the same title start
   /// with that category.
@@ -256,6 +261,10 @@ class AppStore extends ChangeNotifier {
               in (data['learnedCategories'] as Map? ?? const {}).entries)
             key as String: '$value',
         });
+      monthStartDay = ((data['monthStartDay'] as num?)?.toInt() ?? 1).clamp(
+        1,
+        28,
+      );
       onboarded = data['onboarded'] as bool? ?? true;
       if (books.isEmpty) _seed();
     }
@@ -308,6 +317,7 @@ class AppStore extends ChangeNotifier {
     'recurring': recurring.map((item) => item.toJson()).toList(),
     'subcategories': subcategories,
     'learnedCategories': learnedCategories,
+    'monthStartDay': monthStartDay,
     'budgets': budgets.map((item) => item.toJson()).toList(),
     'profile': profile.toJson(),
     'defaultCurrency': defaultCurrency,
@@ -1207,6 +1217,7 @@ class AppStore extends ChangeNotifier {
   /// accounts, without transfers or opening balances.
   double budgetSpent(String scope, String? category, DateTime month) {
     final ids = scopeAccounts(scope);
+    final (start, end) = periodOf(month);
     return transactions
         .where(
           (e) =>
@@ -1214,11 +1225,28 @@ class AppStore extends ChangeNotifier {
               e.countsAsFlow &&
               e.type == TransactionType.cashOut &&
               (category == null || e.category == category) &&
-              e.occurredAt.year == month.year &&
-              e.occurredAt.month == month.month,
+              !e.occurredAt.isBefore(start) &&
+              e.occurredAt.isBefore(end),
         )
         .fold(0.0, (s, e) => s + e.amount);
   }
+
+  Future<void> setMonthStartDay(int day) async {
+    monthStartDay = day.clamp(1, 28);
+    await _commit();
+  }
+
+  /// The anchor (year and month) of the money month containing [when].
+  DateTime periodAnchor(DateTime when) => when.day >= monthStartDay
+      ? DateTime(when.year, when.month)
+      : DateTime(when.year, when.month - 1);
+
+  /// Anchor [month]'s money month: from its start day (inclusive) to next
+  /// month's (exclusive).
+  (DateTime, DateTime) periodOf(DateTime month) => (
+    DateTime(month.year, month.month, monthStartDay),
+    DateTime(month.year, month.month + 1, monthStartDay),
+  );
 
   /// Average monthly spending over the 3 months before [month] (months with
   /// nothing spent count as zero), as a hint when setting a limit.

@@ -1282,6 +1282,17 @@ class AppLocalizationsNe extends AppLocalizations {
   }
 
   @override
+  String get settingsMonthStart => 'महिना सुरु हुने दिन';
+
+  @override
+  String settingsMonthStartValue(int day) {
+    return 'दिन $day';
+  }
+
+  @override
+  String get settingsMonthStartTitle => 'महिना कुन दिनबाट गन्ने…';
+
+  @override
   String get settingsDefaultCurrency => 'नयाँ खाताको पूर्वनिर्धारित मुद्रा';
 
   @override

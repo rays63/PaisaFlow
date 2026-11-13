@@ -28,6 +28,49 @@ String cleanDescription(String raw, {TransactionType? type}) {
   return text;
 }
 
+/// Fallback titles the cleaner produces when a description carries no
+/// merchant or person. Too generic to learn a category from.
+const genericImportTitles = {
+  'imported transaction',
+  'qr payment',
+  'esewa payment',
+  'esewa load',
+  'esewa withdrawal',
+  'khalti load',
+  'ips transfer',
+  'fonepay transfer',
+  'mobile banking',
+  'atm withdrawal',
+  'remittance',
+  'interest',
+  'tax on interest',
+  'ibft charges',
+};
+
+/// How the money moved, read from the bank's code at the start of the
+/// description: 'QR', 'connectIPS', 'Fonepay transfer', 'Mobile banking',
+/// 'ATM', 'eSewa' or 'Khalti'. Null when no code is recognised; the
+/// importer then falls back to the bank's name.
+String? channelOf(String raw) {
+  final text = raw.replaceAll(RegExp(r'\s+'), ' ').trim();
+  bool has(String pattern) =>
+      RegExp(pattern, caseSensitive: false).hasMatch(text);
+  // QR before Mobile banking: Nabil writes QR as "MPAYFPQR".
+  if (has(r'^(QR PAYMENT|MPAY ?FPQR|NQR-|FPS:FPQR)')) return 'QR';
+  // eSewa before Mobile banking: Global IME writes eSewa as "MOS:eSewa".
+  if (has(r'^(Load ?eSewa|eSewa Load|ESWWD:|MOS:eSewa)')) return 'eSewa';
+  if (has(r'^(Khalti Load|Load Wallet Khalti)')) return 'Khalti';
+  // Plain IPS/<bank>/ credits are bulk interbank payments (dividends,
+  // salaries); close enough to connectIPS that they share one mode.
+  if (has(r'^(c?IPS/|CIPS)') || has(r'ACCOUNTFT:')) return 'connectIPS';
+  if (has(r'^(FPY|FON|FBS):IBFT') || has(r'\|\s*IBFT')) {
+    return 'Fonepay transfer';
+  }
+  if (has(r'^(MoBank|MPAY[ A-Z0-9]|MOS:Trf)')) return 'Mobile banking';
+  if (has(r'^(ATM WDL|CWDR/)')) return 'ATM';
+  return null;
+}
+
 class _Rule {
   const _Rule(this.pattern, this.title);
 

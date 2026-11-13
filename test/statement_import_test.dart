@@ -213,7 +213,16 @@ void main() {
       throw StateError('No expected source for $name');
     }
 
-    test('every statement gets its bank or wallet as payment mode', () {
+    test('every row gets its channel, or the bank as the fallback', () {
+      const channels = {
+        'QR',
+        'connectIPS',
+        'Fonepay transfer',
+        'Mobile banking',
+        'ATM',
+        'eSewa',
+        'Khalti',
+      };
       final files = _statements
           .listSync(recursive: true)
           .whereType<File>()
@@ -222,9 +231,14 @@ void main() {
       for (final file in files) {
         final name = file.path.substring(_statements.path.length + 1);
         final rows = _parse(AppStore(), 'book', file).importable;
-        expect(rows.map((row) => row.paymentMode).toSet(), {
-          expectedSource(name),
-        }, reason: name);
+        final allowed = {...channels, expectedSource(name)};
+        for (final row in rows) {
+          expect(
+            allowed,
+            contains(row.paymentMode),
+            reason: '$name: ${row.title}',
+          );
+        }
       }
     });
 

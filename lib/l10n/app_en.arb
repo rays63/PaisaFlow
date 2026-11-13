@@ -1656,6 +1656,28 @@
       }
     }
   },
+  "importMarkLoads": "Mark {count} wallet top-ups as transfers to {account}",
+  "@importMarkLoads": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "account": {
+        "type": "String"
+      }
+    }
+  },
+  "importLoadsMarked": "{count} top-ups marked as transfers to {account} — tap to undo",
+  "@importLoadsMarked": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "account": {
+        "type": "String"
+      }
+    }
+  },
   "importTagAll": "Tag all {count} rows…",
   "@importTagAll": {
     "placeholders": {

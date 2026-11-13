@@ -2062,6 +2062,16 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String importMarkLoads(int count, String account) {
+    return 'Mark $count wallet top-ups as transfers to $account';
+  }
+
+  @override
+  String importLoadsMarked(int count, String account) {
+    return '$count top-ups marked as transfers to $account — tap to undo';
+  }
+
+  @override
   String importTagAll(int count) {
     return 'Tag all $count rows…';
   }

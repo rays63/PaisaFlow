@@ -325,7 +325,9 @@ class ImportParser {
     return row.copyWith(
       title: title,
       notes: title == raw ? row.notes : raw,
-      paymentMode: source ?? row.paymentMode,
+      // How the money moved; the account already says which bank it is,
+      // so the bank's name is only the fallback.
+      paymentMode: channelOf(raw) ?? source ?? row.paymentMode,
       // The cleaned title too: some banks run a remark into a reference
       // ("Utilities2WDGLS66QR9"), hiding the keyword in the raw text.
       category:

@@ -2048,6 +2048,16 @@ class AppLocalizationsNe extends AppLocalizations {
   }
 
   @override
+  String importMarkLoads(int count, String account) {
+    return '$count वालेट टप-अपलाई $account मा ट्रान्सफर बनाउनुहोस्';
+  }
+
+  @override
+  String importLoadsMarked(int count, String account) {
+    return '$count टप-अप $account मा ट्रान्सफर बनाइयो — फिर्ता गर्न थिच्नुहोस्';
+  }
+
+  @override
   String importTagAll(int count) {
     return 'सबै $count पङ्क्तिमा ट्याग राख्नुहोस्…';
   }

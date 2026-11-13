@@ -30,6 +30,11 @@ const categoryRules = [
     'Ncell',
     'topup',
   ], type: TransactionType.cashOut),
+  CategoryRule('Dividend', ['dividend'], type: TransactionType.cashIn),
+  CategoryRule('Cash withdrawal', [
+    'ATM',
+    'CWDR',
+  ], type: TransactionType.cashOut),
   CategoryRule('Shopping', ['Daraz'], type: TransactionType.cashOut),
   CategoryRule('Cafe', ['cafe'], type: TransactionType.cashOut),
   CategoryRule('Food', [

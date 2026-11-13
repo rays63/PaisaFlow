@@ -535,6 +535,8 @@
   "tagReceived": "प्राप्त",
   "tagEmpty": "यो ट्याग अहिलेसम्म कुनै कारोबारमा छैन।",
   "tagRenameTitle": "#{tag} को नाम बदल्नुहोस्",
+  "importMarkLoads": "{count} वालेट टप-अपलाई {account} मा ट्रान्सफर बनाउनुहोस्",
+  "importLoadsMarked": "{count} टप-अप {account} मा ट्रान्सफर बनाइयो — फिर्ता गर्न थिच्नुहोस्",
   "importTagAll": "सबै {count} पङ्क्तिमा ट्याग राख्नुहोस्…",
   "importTaggedAll": "सबै पङ्क्तिमा {tags} ट्याग",
   "insightsTagsTitle": "ट्याग",

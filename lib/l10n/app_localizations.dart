@@ -3313,6 +3313,18 @@ abstract class AppLocalizations {
   /// **'Rename #{tag}'**
   String tagRenameTitle(String tag);
 
+  /// No description provided for @importMarkLoads.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark {count} wallet top-ups as transfers to {account}'**
+  String importMarkLoads(int count, String account);
+
+  /// No description provided for @importLoadsMarked.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} top-ups marked as transfers to {account} — tap to undo'**
+  String importLoadsMarked(int count, String account);
+
   /// No description provided for @importTagAll.
   ///
   /// In en, this message translates to:

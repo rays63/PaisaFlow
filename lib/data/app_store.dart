@@ -722,9 +722,9 @@ class AppStore extends ChangeNotifier {
   // ---------------------------------------------------------------------------
 
   /// A row's learned category, when the user has corrected this title on an
-  /// earlier import.
+  /// earlier import. It beats the keyword rules, which only guess from
+  /// words in the description.
   LedgerTransaction _withLearnedCategory(LedgerTransaction row) {
-    if (row.category != 'Imported') return row;
     final learned = learnedCategories[row.title.toLowerCase().trim()];
     return learned == null ? row : row.copyWith(category: learned);
   }

@@ -64,18 +64,19 @@ void main() {
     expect(reloaded.learnedCategories['qr · mega mart'], 'Groceries');
   });
 
-  test('a category the user already chose is left alone', () async {
+  test('what the user taught beats a keyword guess', () async {
     final store = await _store();
     await store.saveTransaction(
       store.transactionById('a')!.copyWith(category: 'Groceries'),
     );
+    // 'Food' here is what the keyword rules guessed from the description.
     final preview = store.previewImport(
       bookId: 'NIC',
       source: 'PDF',
       parsed: [_imported('ab', 'QR · Mega Mart').copyWith(category: 'Food')],
       ignored: const [],
     );
-    expect(preview.importable.single.category, 'Food');
+    expect(preview.importable.single.category, 'Groceries');
   });
 
   test('generic titles are not learned', () async {

@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:timezone/data/latest.dart' as tzdata;
 import 'package:timezone/timezone.dart' as tz;
 
@@ -20,6 +21,15 @@ class Reminder {
     if (_ready) return true;
     try {
       tzdata.initializeTimeZones();
+      // Without this the timezone package treats local as UTC, and an
+      // 8 PM reminder fires at 8 PM UTC.
+      try {
+        tz.setLocalLocation(
+          tz.getLocation((await FlutterTimezone.getLocalTimezone()).identifier),
+        );
+      } catch (error) {
+        debugPrint('Reminder timezone unknown, using UTC: $error');
+      }
       await _plugin.initialize(
         settings: const InitializationSettings(
           android: AndroidInitializationSettings('@mipmap/ic_launcher'),

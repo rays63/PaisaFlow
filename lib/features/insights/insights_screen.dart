@@ -42,6 +42,10 @@ class _InsightsScreenState extends State<InsightsScreen> {
   String? bookId;
   late DateTime month = _thisMonth();
 
+  /// The month-start day [month] was worked out with, so changing the
+  /// setting moves this screen to the period the user is now in.
+  late int startDay = AppScope.read(context).monthStartDay;
+
   DateTime _thisMonth() => AppScope.read(context).periodAnchor(DateTime.now());
   late DateTime selected = DateUtils.dateOnly(DateTime.now());
   TrendRange range = TrendRange.month;
@@ -63,6 +67,11 @@ class _InsightsScreenState extends State<InsightsScreen> {
   @override
   Widget build(BuildContext context) {
     final store = AppScope.watch(context);
+    if (store.monthStartDay != startDay) {
+      startDay = store.monthStartDay;
+      month = _thisMonth();
+      selected = DateUtils.dateOnly(DateTime.now());
+    }
     final c = context.pf;
     final l = context.l10n;
     final home = store.defaultCurrency;

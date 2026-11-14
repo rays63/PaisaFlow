@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import '../../core/reminder.dart';
 import '../../data/app_store.dart';
 import '../../data/backup.dart';
 import '../../l10n/l10n.dart';
@@ -123,6 +124,15 @@ class _RestoreScreenState extends State<RestoreScreen> {
     } else {
       added = await store.restoreMerge(backup!);
     }
+    if (!mounted) return;
+    // A replaced backup can carry a different reminder time, so put the
+    // schedule back in step with it rather than waiting for a restart.
+    final l = context.l10n;
+    await Reminder.sync(
+      store.reminderMinutes,
+      title: l.reminderTitle,
+      body: l.reminderBody,
+    );
     if (!mounted) return;
     setState(() => step = 3);
     await Future<void>.delayed(const Duration(milliseconds: 350));

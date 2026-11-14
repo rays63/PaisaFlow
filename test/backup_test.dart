@@ -179,6 +179,21 @@ void main() {
       expect(read.transactions.single.id, 'a');
       expect(read.tags, ['wedding']);
     });
+
+    test('settings and taught categories survive a backup', () async {
+      final store = await _store(_data(['a']));
+      await store.setMonthStartDay(25);
+      await store.setReminderMinutes(20 * 60);
+      store.learnedCategories['qr · mega mart'] = 'Groceries';
+      final bytes = await BackupCodec.encode(
+        store.snapshot(),
+        appVersion: '1.0.0',
+      );
+      final read = AppStore.readBackupData(await BackupCodec.decode(bytes));
+      expect(read.monthStartDay, 25);
+      expect(read.reminderMinutes, 20 * 60);
+      expect(read.learnedCategories['qr · mega mart'], 'Groceries');
+    });
   });
 
   group('reminder', () {

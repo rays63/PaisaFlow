@@ -3061,6 +3061,11 @@ class AppLocalizationsNe extends AppLocalizations {
   }
 
   @override
+  String budgetPeriod(String from, String to) {
+    return '$from – $to';
+  }
+
+  @override
   String budgetMonth(String month) {
     return '$month · 1 गते फेरि सुरु हुन्छ';
   }

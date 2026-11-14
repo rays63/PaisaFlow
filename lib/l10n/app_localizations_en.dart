@@ -3137,6 +3137,11 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String budgetPeriod(String from, String to) {
+    return '$from – $to';
+  }
+
+  @override
   String budgetMonth(String month) {
     return '$month · resets on the 1st';
   }

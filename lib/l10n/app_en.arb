@@ -2410,6 +2410,17 @@
       }
     }
   },
+  "budgetPeriod": "{from} – {to}",
+  "@budgetPeriod": {
+    "placeholders": {
+      "from": {
+        "type": "String"
+      },
+      "to": {
+        "type": "String"
+      }
+    }
+  },
   "budgetMonth": "{month} · resets on the 1st",
   "@budgetMonth": {
     "placeholders": {

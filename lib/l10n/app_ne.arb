@@ -811,6 +811,7 @@
   "budgetsTitle": "बजेट",
   "budgetScope": "बजेट कसका लागि",
   "budgetScopeAll": "सबै {currency} खाता",
+  "budgetPeriod": "{from} – {to}",
   "budgetMonth": "{month} · 1 गते फेरि सुरु हुन्छ",
   "budgetEmptyTitle": "अहिलेसम्म बजेट छैन",
   "budgetEmptyBody": "कुनै वर्ग वा सबैका लागि मासिक सीमा राख्नुहोस्। खर्च गर्दै जाँदा कति बाँकी छ देखिन्छ।",

@@ -4969,6 +4969,12 @@ abstract class AppLocalizations {
   /// **'All {currency} accounts'**
   String budgetScopeAll(String currency);
 
+  /// No description provided for @budgetPeriod.
+  ///
+  /// In en, this message translates to:
+  /// **'{from} – {to}'**
+  String budgetPeriod(String from, String to);
+
   /// No description provided for @budgetMonth.
   ///
   /// In en, this message translates to:

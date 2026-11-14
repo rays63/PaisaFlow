@@ -143,7 +143,17 @@ class _BudgetsScreenState extends State<BudgetsScreen> {
                 Icon(LucideIcons.calendarDays, size: 15, color: c.sub),
                 const SizedBox(width: 8),
                 Text(
-                  l.budgetMonth(DateFormat('MMMM y').format(month)),
+                  store.monthStartDay == 1
+                      ? l.budgetMonth(DateFormat('MMMM y').format(month))
+                      : l.budgetPeriod(
+                          DateFormat('d MMM').format(store.periodOf(month).$1),
+                          DateFormat('d MMM y').format(
+                            store
+                                .periodOf(month)
+                                .$2
+                                .subtract(const Duration(days: 1)),
+                          ),
+                        ),
                   style: pfText(12.5, weight: w800, color: c.sub),
                 ),
               ],

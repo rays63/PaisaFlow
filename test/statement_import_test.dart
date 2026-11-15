@@ -12,7 +12,7 @@ final _statements = Directory('test_statements');
 
 /// Statements from sources without a parser yet (Khalti: build 6) are kept
 /// in the folder for later but left out of these checks.
-const _notSupportedYet = {'khalti.xls'};
+const _notSupportedYet = <String>{};
 
 bool _isSupportedStatement(File file) =>
     RegExp(r'\.(pdf|xls)$').hasMatch(file.path) &&
@@ -207,10 +207,22 @@ void main() {
         return ImportParser.standardChartered;
       }
       if (name.startsWith('eSewa')) return ImportParser.esewa;
+      if (name.startsWith('Gbime')) return ImportParser.globalIme;
+      if (name.startsWith('statement-')) return ImportParser.nmb;
+      if (name.startsWith('khalti')) return ImportParser.khalti;
       throw StateError('No expected source for $name');
     }
 
-    test('every statement gets its bank or wallet as payment mode', () {
+    test('every row gets its channel, or the bank as the fallback', () {
+      const channels = {
+        'QR',
+        'connectIPS',
+        'Fonepay transfer',
+        'Mobile banking',
+        'ATM',
+        'eSewa',
+        'Khalti',
+      };
       final files = _statements
           .listSync(recursive: true)
           .whereType<File>()
@@ -219,9 +231,14 @@ void main() {
       for (final file in files) {
         final name = file.path.substring(_statements.path.length + 1);
         final rows = _parse(AppStore(), 'book', file).importable;
-        expect(rows.map((row) => row.paymentMode).toSet(), {
-          expectedSource(name),
-        }, reason: name);
+        final allowed = {...channels, expectedSource(name)};
+        for (final row in rows) {
+          expect(
+            allowed,
+            contains(row.paymentMode),
+            reason: '$name: ${row.title}',
+          );
+        }
       }
     });
 

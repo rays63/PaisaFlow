@@ -1,9 +1,11 @@
+import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import '../../core/reminder.dart';
 import '../../data/app_store.dart';
 import '../../data/backup.dart';
 import '../../l10n/l10n.dart';
@@ -124,6 +126,17 @@ class _RestoreScreenState extends State<RestoreScreen> {
       added = await store.restoreMerge(backup!);
     }
     if (!mounted) return;
+    // A replaced backup can carry a different reminder time, so put the
+    // schedule back in step with it rather than waiting for a restart.
+    // Not awaited: the restore is done either way.
+    final l = context.l10n;
+    unawaited(
+      Reminder.sync(
+        store.reminderMinutes,
+        title: l.reminderTitle,
+        body: l.reminderBody,
+      ),
+    );
     setState(() => step = 3);
     await Future<void>.delayed(const Duration(milliseconds: 350));
     if (!mounted) return;
@@ -468,7 +481,10 @@ class _RestoreScreenState extends State<RestoreScreen> {
                 color: i < step ? c.cashIn : c.mute,
               ),
               const SizedBox(width: 10),
-              Text(steps[i], style: pfText(14.5, weight: w800)),
+              // Long step wording (and Nepali) wraps instead of overflowing.
+              Expanded(
+                child: Text(steps[i], style: pfText(14.5, weight: w800)),
+              ),
             ],
           ),
         ),

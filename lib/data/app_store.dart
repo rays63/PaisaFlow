@@ -8,6 +8,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:intl/intl.dart';
 
 import '../core/format.dart';
+import 'description_cleaner.dart' show genericImportTitles;
 import 'models.dart';
 import 'split.dart';
 
@@ -79,6 +80,19 @@ class AppStore extends ChangeNotifier {
 
   /// Second-level names under each category (Food → Lunch, Groceries…).
   final Map<String, List<String>> subcategories = {};
+
+  /// The day a money month begins (1–28), like a payday. Insights, budgets
+  /// and the Home figures count a month from this day to the day before it
+  /// next month; the calendar chart keeps real dates.
+  int monthStartDay = 1;
+
+  /// Daily reminder time as minutes past midnight; null means off.
+  int? reminderMinutes;
+
+  /// Categories the user taught by correcting an imported entry, keyed by
+  /// its cleaned title in lowercase; later imports of the same title start
+  /// with that category.
+  final Map<String, String> learnedCategories = {};
 
   /// Monthly spending limits.
   final List<Budget> budgets = [];
@@ -243,6 +257,18 @@ class AppStore extends ChangeNotifier {
               in (data['subcategories'] as Map? ?? const {}).entries)
             key as String: [for (final v in value as List) '$v'],
         });
+      learnedCategories
+        ..clear()
+        ..addAll({
+          for (final MapEntry(:key, :value)
+              in (data['learnedCategories'] as Map? ?? const {}).entries)
+            key as String: '$value',
+        });
+      monthStartDay = ((data['monthStartDay'] as num?)?.toInt() ?? 1).clamp(
+        1,
+        28,
+      );
+      reminderMinutes = (data['reminderMinutes'] as num?)?.toInt();
       onboarded = data['onboarded'] as bool? ?? true;
       if (books.isEmpty) _seed();
     }
@@ -294,6 +320,9 @@ class AppStore extends ChangeNotifier {
     'templates': templates.map((item) => item.toJson()).toList(),
     'recurring': recurring.map((item) => item.toJson()).toList(),
     'subcategories': subcategories,
+    'learnedCategories': learnedCategories,
+    'monthStartDay': monthStartDay,
+    'reminderMinutes': ?reminderMinutes,
     'budgets': budgets.map((item) => item.toJson()).toList(),
     'profile': profile.toJson(),
     'defaultCurrency': defaultCurrency,
@@ -632,6 +661,9 @@ class AppStore extends ChangeNotifier {
 
   Future<void> _removeOption(List<String> list, String name) async {
     if (!list.remove(name)) return;
+    if (list == categories) {
+      learnedCategories.removeWhere((_, category) => category == name);
+    }
     await _commit();
   }
 
@@ -662,6 +694,7 @@ class AppStore extends ChangeNotifier {
         final into = subcategories[value] ??= [];
         into.addAll(subs.where((s) => !into.contains(s)));
       }
+      learnedCategories.updateAll((_, c) => c == from ? value : c);
       for (var i = 0; i < budgets.length; i++) {
         if (budgets[i].category == from) {
           budgets[i] = Budget(
@@ -688,6 +721,14 @@ class AppStore extends ChangeNotifier {
   // Entries
   // ---------------------------------------------------------------------------
 
+  /// A row's learned category, when the user has corrected this title on an
+  /// earlier import. It beats the keyword rules, which only guess from
+  /// words in the description.
+  LedgerTransaction _withLearnedCategory(LedgerTransaction row) {
+    final learned = learnedCategories[row.title.toLowerCase().trim()];
+    return learned == null ? row : row.copyWith(category: learned);
+  }
+
   Future<void> saveTransaction(LedgerTransaction transaction) async {
     _rememberTags(transaction.tags);
     final index = transactions.indexWhere((item) => item.id == transaction.id);
@@ -696,6 +737,17 @@ class AppStore extends ChangeNotifier {
       _addLog(transaction.id, 'created', 'Entry created', code: 'created');
     } else {
       final before = transactions[index];
+      // Correcting an imported entry's category teaches later imports of
+      // the same title, unless the title is too generic to mean one thing.
+      final learnKey = transaction.title.toLowerCase().trim();
+      if (before.category != transaction.category &&
+          transaction.importSource.isNotEmpty &&
+          !transaction.isTransferLeg &&
+          transaction.category != 'Imported' &&
+          learnKey.isNotEmpty &&
+          !genericImportTitles.contains(learnKey)) {
+        learnedCategories[learnKey] = transaction.category;
+      }
       transactions[index] = transaction.copyWith(updatedAt: DateTime.now());
       final currency = bookById(transaction.bookId)?.currency ?? 'NPR';
       for (final (details, code, args) in _describeChanges(
@@ -1037,6 +1089,9 @@ class AppStore extends ChangeNotifier {
         if (!into.contains(name)) into.add(name);
       }
     }
+    for (final MapEntry(:key, :value) in other.learnedCategories.entries) {
+      learnedCategories.putIfAbsent(key, () => value);
+    }
     addMissing(friends, other.friends, (f) => f.id);
     addMissing(groups, other.groups, (g) => g.id);
     addMissing(bills, other.bills, (b) => b.id);
@@ -1167,6 +1222,7 @@ class AppStore extends ChangeNotifier {
   /// accounts, without transfers or opening balances.
   double budgetSpent(String scope, String? category, DateTime month) {
     final ids = scopeAccounts(scope);
+    final (start, end) = periodOf(month);
     return transactions
         .where(
           (e) =>
@@ -1174,11 +1230,33 @@ class AppStore extends ChangeNotifier {
               e.countsAsFlow &&
               e.type == TransactionType.cashOut &&
               (category == null || e.category == category) &&
-              e.occurredAt.year == month.year &&
-              e.occurredAt.month == month.month,
+              !e.occurredAt.isBefore(start) &&
+              e.occurredAt.isBefore(end),
         )
         .fold(0.0, (s, e) => s + e.amount);
   }
+
+  Future<void> setReminderMinutes(int? minutes) async {
+    reminderMinutes = minutes;
+    await _commit();
+  }
+
+  Future<void> setMonthStartDay(int day) async {
+    monthStartDay = day.clamp(1, 28);
+    await _commit();
+  }
+
+  /// The anchor (year and month) of the money month containing [when].
+  DateTime periodAnchor(DateTime when) => when.day >= monthStartDay
+      ? DateTime(when.year, when.month)
+      : DateTime(when.year, when.month - 1);
+
+  /// Anchor [month]'s money month: from its start day (inclusive) to next
+  /// month's (exclusive).
+  (DateTime, DateTime) periodOf(DateTime month) => (
+    DateTime(month.year, month.month, monthStartDay),
+    DateTime(month.year, month.month + 1, monthStartDay),
+  );
 
   /// Average monthly spending over the 3 months before [month] (months with
   /// nothing spent count as zero), as a hint when setting a limit.
@@ -2017,7 +2095,8 @@ class AppStore extends ChangeNotifier {
     }
     final importable = <LedgerTransaction>[];
     final duplicates = <LedgerTransaction>[];
-    for (final transaction in parsed) {
+    for (final row in parsed) {
+      final transaction = _withLearnedCategory(row);
       final key = _duplicateKey(transaction);
       final remaining = existing[key] ?? 0;
       if (remaining > 0) {
@@ -2166,6 +2245,7 @@ class AppStore extends ChangeNotifier {
     ImportPreview preview, {
     Map<String, String> transfers = const {},
     List<String> tags = const [],
+    Map<String, String> matched = const {},
   }) async {
     if (tags.isNotEmpty) {
       _rememberTags(tags);
@@ -2198,23 +2278,44 @@ class AppStore extends ChangeNotifier {
       // still finds it; the other account gets the matching side.
       final transferId = newId('xfer');
       rows.add(_asTransferLeg(row, transferId));
-      transactions.add(
-        _asTransferLeg(
-          row,
-          transferId,
-          id: newId('txn'),
-          bookId: other,
-          type: row.type == TransactionType.cashOut
-              ? TransactionType.cashIn
-              : TransactionType.cashOut,
-        ),
+      // When the other account already holds the matching entry (an eSewa
+      // load the user also logged in eSewa, say), link it as the other leg
+      // instead of adding a double.
+      final existing = transactions.indexWhere(
+        (t) => t.id == matched[row.id] && !t.isTransferLeg && t.bookId == other,
       );
-      _addLog(
-        transactions.last.id,
-        'created',
-        'Transfer created',
-        code: 'transferCreated',
-      );
+      if (existing >= 0) {
+        transactions[existing] = transactions[existing].copyWith(
+          title: 'Transfer',
+          category: 'Transfer',
+          transferId: transferId,
+          updatedAt: DateTime.now(),
+        );
+        _addLog(
+          transactions[existing].id,
+          'created',
+          'Transfer created',
+          code: 'transferCreated',
+        );
+      } else {
+        transactions.add(
+          _asTransferLeg(
+            row,
+            transferId,
+            id: newId('txn'),
+            bookId: other,
+            type: row.type == TransactionType.cashOut
+                ? TransactionType.cashIn
+                : TransactionType.cashOut,
+          ),
+        );
+        _addLog(
+          transactions.last.id,
+          'created',
+          'Transfer created',
+          code: 'transferCreated',
+        );
+      }
       _touchBook(other);
     }
     transactions.addAll(rows);

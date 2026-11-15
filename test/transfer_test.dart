@@ -226,20 +226,71 @@ void main() {
 
   test('statement rows that look like transfers find the account', () async {
     final store = await _store();
-    String? hint(String title, String notes, [String type = 'cashOut']) =>
-        transferCounterpart(
+    TransferHint? hint(String title, String notes, [String type = 'cashOut']) =>
+        transferHint(
           _row('r', title, notes, type),
           store.books,
+          store.transactions,
           currency: 'NPR',
         );
-    expect(hint('eSewa load', 'LoadeSewa 9841234567'), 'eSewa');
-    expect(hint('ATM withdrawal', 'ATM WDL DURBARMARG'), 'Cash');
-    expect(hint('NABIL CARD PMT 4417', ''), 'Visa');
-    expect(hint('eSewa withdrawal', 'ESWWD:1234', 'cashIn'), 'eSewa');
+    // A load can be of someone else's wallet, so without the matching
+    // cash-in in eSewa it is offered but not ticked.
+    final load = hint('eSewa load', 'LoadeSewa 9841234567')!;
+    expect(load.bookId, 'eSewa');
+    expect(load.confident, isFalse);
+    expect(load.walletLoad, isTrue);
+    // An ATM withdrawal is the user's own cash: ticked from the start.
+    final atm = hint('ATM withdrawal', 'ATM WDL DURBARMARG')!;
+    expect(atm.bookId, 'Cash');
+    expect(atm.confident, isTrue);
+    expect(hint('NABIL CARD PMT 4417', '')!.bookId, 'Visa');
+    expect(hint('NABIL CARD PMT 4417', '')!.confident, isFalse);
+    expect(hint('eSewa withdrawal', 'ESWWD:1234', 'cashIn')!.bookId, 'eSewa');
     expect(hint('QR · Himalayan Java', 'QR PAYMENT-123'), isNull);
     // No Khalti account, so nothing is suggested.
     expect(hint('Khalti load', 'Khalti Load 98'), isNull);
   });
+
+  test(
+    'a matched load is confident and importing links, not doubles',
+    () async {
+      final store = await _store();
+      final inWallet = LedgerTransaction.fromJson({
+        ..._entry('loaded', 'eSewa', 3000),
+        'occurredAt': '2026-10-02T09:00:00.000',
+        'category': 'Imported',
+      });
+      await store.saveTransaction(inWallet);
+      final row = _row('r1', 'eSewa load', 'LoadeSewa 9841234567', 'cashOut');
+      final found = transferHint(
+        row,
+        store.books,
+        store.transactions,
+        currency: 'NPR',
+      )!;
+      expect(found.confident, isTrue);
+      expect(found.matchedEntryId, 'loaded');
+      await store.commitImport(
+        ImportPreview(
+          source: 'NIC Asia',
+          importable: [row],
+          duplicates: const [],
+          ignored: const [],
+        ),
+        transfers: {'r1': 'eSewa'},
+        matched: {'r1': 'loaded'},
+      );
+      final leg = store.transactionById('r1')!;
+      expect(leg.isTransferLeg, isTrue);
+      expect(store.transactionById('loaded')!.transferId, leg.transferId);
+      // Linked, not doubled: the wallet still holds one entry.
+      expect(
+        store.transactions.where((t) => t.bookId == 'eSewa'),
+        hasLength(1),
+      );
+      expect(store.balanceFor('eSewa'), 3000);
+    },
+  );
 
   test('an imported row made into a transfer gets its other side', () async {
     final store = await _store();

@@ -55,6 +55,7 @@ class _CategoryDetailScreenState extends State<CategoryDetailScreen> {
         .toList();
     final months = Insights(
       entries,
+      startDay: store.monthStartDay,
     ).categoryMonths(widget.category, widget.month);
     final current = months.last.$2;
     final earlier = months.take(5).where((m) => m.$2 > 0).map((m) => m.$2);

@@ -114,7 +114,6 @@
   "youOwe": "You owe",
   "recentlyUpdated": "Recently updated",
   "seeAll": "See all",
-  "calendar": "Calendar",
   "settings": "Settings",
   "category": "Category",
   "paymentMode": "Payment mode",
@@ -1030,6 +1029,30 @@
       }
     }
   },
+  "settingsReminder": "Daily reminder",
+  "reminderChangeTime": "Change the time",
+  "reminderTitle": "Today's spending",
+  "reminderBody": "Take a minute to note what you spent today.",
+  "reminderNoPermission": "Notifications are off for Paisa Flow in the phone's settings.",
+  "reminderOffToast": "Daily reminder turned off",
+  "reminderOnToast": "Daily reminder set for {time}",
+  "@reminderOnToast": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsMonthStart": "Month starts on",
+  "settingsMonthStartValue": "Day {day}",
+  "@settingsMonthStartValue": {
+    "placeholders": {
+      "day": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsMonthStartTitle": "Count a month from day…",
   "settingsDefaultCurrency": "Default currency for new accounts",
   "settingsDefaultCurrencyTitle": "Default currency",
   "settingsExportAll": "Export all data",
@@ -1653,6 +1676,28 @@
   "@tagRenameTitle": {
     "placeholders": {
       "tag": {
+        "type": "String"
+      }
+    }
+  },
+  "importMarkLoads": "Mark {count} wallet top-ups as transfers to {account}",
+  "@importMarkLoads": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "account": {
+        "type": "String"
+      }
+    }
+  },
+  "importLoadsMarked": "{count} top-ups marked as transfers to {account} — tap to undo",
+  "@importLoadsMarked": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "account": {
         "type": "String"
       }
     }
@@ -2361,6 +2406,17 @@
   "@budgetScopeAll": {
     "placeholders": {
       "currency": {
+        "type": "String"
+      }
+    }
+  },
+  "budgetPeriod": "{from} – {to}",
+  "@budgetPeriod": {
+    "placeholders": {
+      "from": {
+        "type": "String"
+      },
+      "to": {
         "type": "String"
       }
     }

@@ -225,6 +225,7 @@ class LedgerTransaction {
     String? importSource,
     List<String>? tags,
     String? subcategory,
+    String? transferId,
   }) {
     return LedgerTransaction(
       id: id,
@@ -244,7 +245,7 @@ class LedgerTransaction {
       statementBalance: statementBalance ?? this.statementBalance,
       sequence: sequence ?? this.sequence,
       importSource: importSource ?? this.importSource,
-      transferId: transferId,
+      transferId: transferId ?? this.transferId,
       transferFee: transferFee,
       tags: tags ?? this.tags,
       subcategory: subcategory ?? this.subcategory,

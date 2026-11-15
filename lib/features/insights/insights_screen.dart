@@ -41,14 +41,17 @@ class _InsightsScreenState extends State<InsightsScreen> {
   /// Null means every book in the home currency.
   String? bookId;
   late DateTime month = _thisMonth();
+
+  /// The month-start day [month] was worked out with, so changing the
+  /// setting moves this screen to the period the user is now in.
+  late int startDay = AppScope.read(context).monthStartDay;
+
+  DateTime _thisMonth() => AppScope.read(context).periodAnchor(DateTime.now());
   late DateTime selected = DateUtils.dateOnly(DateTime.now());
   TrendRange range = TrendRange.month;
   _Chart chart = _Chart.flow;
   bool chartsAsList = false;
   bool boxesAsList = false;
-
-  static DateTime _thisMonth() =>
-      DateTime(DateTime.now().year, DateTime.now().month);
 
   void _shiftMonth(int delta) => setState(() {
     month = DateTime(month.year, month.month + delta);
@@ -64,6 +67,11 @@ class _InsightsScreenState extends State<InsightsScreen> {
   @override
   Widget build(BuildContext context) {
     final store = AppScope.watch(context);
+    if (store.monthStartDay != startDay) {
+      startDay = store.monthStartDay;
+      month = _thisMonth();
+      selected = DateUtils.dateOnly(DateTime.now());
+    }
     final c = context.pf;
     final l = context.l10n;
     final home = store.defaultCurrency;
@@ -78,7 +86,7 @@ class _InsightsScreenState extends State<InsightsScreen> {
     final entries = store.transactions
         .where((entry) => scopeIds.contains(entry.bookId))
         .toList();
-    final insights = Insights(entries);
+    final insights = Insights(entries, startDay: store.monthStartDay);
     final summary = insights.month(month);
     final trend = insights.trend(range);
     final flow = insights.flow(month);
@@ -236,10 +244,20 @@ class _InsightsScreenState extends State<InsightsScreen> {
           Expanded(
             child: FittedBox(
               fit: BoxFit.scaleDown,
-              child: Text(
-                DateFormat('MMMM y').format(month),
-                maxLines: 1,
-                style: pfText(18, weight: w900),
+              child: Builder(
+                builder: (context) {
+                  final store = AppScope.read(context);
+                  final (from, until) = store.periodOf(month);
+                  final last = DateTime(until.year, until.month, until.day - 1);
+                  return Text(
+                    store.monthStartDay == 1
+                        ? DateFormat('MMMM y').format(month)
+                        : '${DateFormat('d MMM').format(from)} – '
+                              '${DateFormat('d MMM y').format(last)}',
+                    maxLines: 1,
+                    style: pfText(18, weight: w900),
+                  );
+                },
               ),
             ),
           ),

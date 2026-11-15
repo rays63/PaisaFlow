@@ -18,14 +18,17 @@ Available in English and नेपाली.
   - Each entry has a category and optional subcategory (Food › Lunch), payment mode, date, notes, **tags** (#japan-trip) and an edit history.
   - Faster entry: title suggestions from past entries, templates (★), and "Save & add another".
   - **Repeating entries** and a loan **EMI calculator**. Due entries are listed for you to confirm when the app opens; nothing is added on its own.
+- **Month starts on any day 1–28** (Settings), for people paid mid-month: Insights, budgets and the Home figures count from that day. The calendar keeps real dates.
+- **Optional daily reminder** to note the day's spending.
 - **All entries and search:** one feed across accounts with month totals and filters, and search over titles, notes, amounts, references, tags and subcategories.
 - **Statement import:**
-  - Text-based PDF bank statements (NIC Asia, Nabil, Standard Chartered and similar), including password-protected PDFs.
-  - Legacy `.xls` / `.xlsx` / `.csv` wallet exports (eSewa).
+  - Text-based PDF bank statements (NIC Asia, Nabil, Global IME, NMB, Standard Chartered and similar), including password-protected PDFs.
+  - Legacy `.xls` / `.xlsx` / `.csv` wallet exports (eSewa, Khalti).
   - Several files at once, with one combined preview. Overlapping days are imported once, and a gap between two statements of the same account is flagged.
   - Duplicates are detected on re-import.
-  - Each entry's payment mode is set to the bank or wallet it came from.
-  - Simple keyword rules (`lib/data/category_rules.dart`) suggest a category.
+  - Each entry's payment mode says how the money moved — QR, connectIPS, Fonepay transfer, Mobile banking, ATM, eSewa, Khalti — read from the bank's code, with the bank's own name as the fallback.
+  - Wallet top-ups and ATM withdrawals can become transfers: a top-up is pre-ticked only when the matching entry already exists in the wallet account, and the preview has a bulk "mark as transfers" action for the rest.
+  - Simple keyword rules (`lib/data/category_rules.dart`) suggest a category, and correcting an imported entry teaches later imports of the same title.
   - Bank codes in descriptions become readable titles, such as `QR · Mega Mart Nagaun` or `IPS · Name · Loan Paid` (`lib/data/description_cleaner.dart`). The bank's original text is kept in the entry's notes.
   - Importing into an empty book adds the statement's opening balance, so the book ends at the bank's closing balance.
 - **Split:** groups, shared expenses and one-off bills, with balances per friend and settle-up.

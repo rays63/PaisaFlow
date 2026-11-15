@@ -386,12 +386,6 @@ abstract class AppLocalizations {
   /// **'See all'**
   String get seeAll;
 
-  /// No description provided for @calendar.
-  ///
-  /// In en, this message translates to:
-  /// **'Calendar'**
-  String get calendar;
-
   /// No description provided for @settings.
   ///
   /// In en, this message translates to:
@@ -2089,6 +2083,66 @@ abstract class AppLocalizations {
   /// **'{count, plural, =1{1 item} other{{count} items}}'**
   String settingsItemCount(int count);
 
+  /// No description provided for @settingsReminder.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily reminder'**
+  String get settingsReminder;
+
+  /// No description provided for @reminderChangeTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Change the time'**
+  String get reminderChangeTime;
+
+  /// No description provided for @reminderTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Today\'s spending'**
+  String get reminderTitle;
+
+  /// No description provided for @reminderBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Take a minute to note what you spent today.'**
+  String get reminderBody;
+
+  /// No description provided for @reminderNoPermission.
+  ///
+  /// In en, this message translates to:
+  /// **'Notifications are off for Paisa Flow in the phone\'s settings.'**
+  String get reminderNoPermission;
+
+  /// No description provided for @reminderOffToast.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily reminder turned off'**
+  String get reminderOffToast;
+
+  /// No description provided for @reminderOnToast.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily reminder set for {time}'**
+  String reminderOnToast(String time);
+
+  /// No description provided for @settingsMonthStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Month starts on'**
+  String get settingsMonthStart;
+
+  /// No description provided for @settingsMonthStartValue.
+  ///
+  /// In en, this message translates to:
+  /// **'Day {day}'**
+  String settingsMonthStartValue(int day);
+
+  /// No description provided for @settingsMonthStartTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Count a month from day…'**
+  String get settingsMonthStartTitle;
+
   /// No description provided for @settingsDefaultCurrency.
   ///
   /// In en, this message translates to:
@@ -3318,6 +3372,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Rename #{tag}'**
   String tagRenameTitle(String tag);
+
+  /// No description provided for @importMarkLoads.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark {count} wallet top-ups as transfers to {account}'**
+  String importMarkLoads(int count, String account);
+
+  /// No description provided for @importLoadsMarked.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} top-ups marked as transfers to {account} — tap to undo'**
+  String importLoadsMarked(int count, String account);
 
   /// No description provided for @importTagAll.
   ///
@@ -4902,6 +4968,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'All {currency} accounts'**
   String budgetScopeAll(String currency);
+
+  /// No description provided for @budgetPeriod.
+  ///
+  /// In en, this message translates to:
+  /// **'{from} – {to}'**
+  String budgetPeriod(String from, String to);
 
   /// No description provided for @budgetMonth.
   ///

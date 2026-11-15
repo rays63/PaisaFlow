@@ -6,6 +6,8 @@ import '../../core/app_info.dart';
 import '../../data/app_store.dart';
 import '../../l10n/l10n.dart';
 import '../../theme/tokens.dart';
+import '../../core/reminder.dart';
+import '../../widgets/option_sheet.dart';
 import '../../widgets/pf.dart';
 import '../../widgets/store_sheets.dart';
 import '../backup/backup_screen.dart';
@@ -144,6 +146,31 @@ class SettingsScreen extends StatelessWidget {
                   ),
                   const PfDivider(),
                   _SettingsRow(
+                    icon: LucideIcons.calendarRange,
+                    label: l.settingsMonthStart,
+                    value: l.settingsMonthStartValue(store.monthStartDay),
+                    chevron: false,
+                    onTap: () async {
+                      final picked = await showOptionSheet<int>(
+                        context,
+                        title: l.settingsMonthStartTitle,
+                        selected: store.monthStartDay,
+                        options: () => [
+                          for (var day = 1; day <= 28; day++)
+                            SheetOption(
+                              day,
+                              l.settingsMonthStartValue(day),
+                              LucideIcons.calendarRange,
+                            ),
+                        ],
+                      );
+                      if (picked != null) {
+                        await store.setMonthStartDay(picked);
+                      }
+                    },
+                  ),
+                  const PfDivider(),
+                  _SettingsRow(
                     icon: LucideIcons.hardDriveDownload,
                     label: l.backupTitle,
                     value: store.lastBackupAt == null
@@ -167,6 +194,16 @@ class SettingsScreen extends StatelessWidget {
                     onTap: () => Navigator.of(context).push(
                       MaterialPageRoute(builder: (_) => const AppLockScreen()),
                     ),
+                  ),
+                  const PfDivider(),
+                  _SettingsRow(
+                    icon: LucideIcons.bellRing,
+                    label: l.settingsReminder,
+                    value: store.reminderMinutes == null
+                        ? l.settingsOff
+                        : _timeLabel(context, store.reminderMinutes!),
+                    chevron: false,
+                    onTap: () => _editReminder(context, store),
                   ),
                 ],
               ),
@@ -232,6 +269,59 @@ class _SettingsRow extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+String _timeLabel(BuildContext context, int minutes) =>
+    TimeOfDay(hour: minutes ~/ 60, minute: minutes % 60).format(context);
+
+/// Turns the daily reminder on (asking for permission and a time), changes
+/// its time, or turns it off.
+Future<void> _editReminder(BuildContext context, AppStore store) async {
+  final l = context.l10n;
+  final current = store.reminderMinutes;
+  var turnOff = false;
+  if (current != null) {
+    final choice = await showOptionSheet<String>(
+      context,
+      title: l.settingsReminder,
+      selected: 'time',
+      options: () => [
+        SheetOption('time', l.reminderChangeTime, LucideIcons.clock),
+        SheetOption('off', l.settingsOff, LucideIcons.bellOff),
+      ],
+    );
+    if (choice == null) return;
+    turnOff = choice == 'off';
+  }
+  if (!context.mounted) return;
+  int? minutes;
+  if (!turnOff) {
+    if (current == null && !await Reminder.requestPermission()) {
+      if (context.mounted) showPfToast(context, l.reminderNoPermission);
+      return;
+    }
+    if (!context.mounted) return;
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay(
+        hour: (current ?? 1200) ~/ 60,
+        minute: (current ?? 0) % 60,
+      ),
+    );
+    if (picked == null) return;
+    minutes = picked.hour * 60 + picked.minute;
+  }
+  await store.setReminderMinutes(minutes);
+  if (!context.mounted) return;
+  await Reminder.sync(minutes, title: l.reminderTitle, body: l.reminderBody);
+  if (context.mounted) {
+    showPfToast(
+      context,
+      minutes == null
+          ? l.reminderOffToast
+          : l.reminderOnToast(_timeLabel(context, minutes)),
     );
   }
 }

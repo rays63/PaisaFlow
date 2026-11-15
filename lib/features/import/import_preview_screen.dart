@@ -42,14 +42,41 @@ class _ImportPreviewScreenState extends State<ImportPreviewScreen> {
   List<String> tags = const [];
 
   /// Rows that look like a transfer to one of the user's accounts.
-  late final Map<String, String> hints = () {
+  late final Map<String, TransferHint> hints = () {
     final store = AppScope.read(context);
     final currency = store.bookById(widget.bookId)?.currency ?? 'NPR';
     return {
       for (final row in widget.batch.combined.importable)
-        row.id: ?transferCounterpart(row, store.books, currency: currency),
+        row.id: ?transferHint(
+          row,
+          store.books,
+          store.transactions,
+          currency: currency,
+        ),
     };
   }();
+
+  /// Wallet top-ups without a matched entry, per wallet account, for the
+  /// bulk "mark all as transfers" action.
+  late final Map<String, List<String>> looseLoads = () {
+    final loads = <String, List<String>>{};
+    for (final MapEntry(:key, :value) in hints.entries) {
+      if (value.walletLoad && !value.confident) {
+        loads.putIfAbsent(value.bookId, () => []).add(key);
+      }
+    }
+    return loads;
+  }();
+
+  @override
+  void initState() {
+    super.initState();
+    // Rows whose other side already exists (and ATM withdrawals with a cash
+    // account) start as transfers; a tap on the row undoes it.
+    for (final MapEntry(:key, :value) in hints.entries) {
+      if (value.confident) transfers[key] = value.bookId;
+    }
+  }
 
   /// Each file's ready and duplicate rows together, in date order.
   late final sections = [
@@ -74,9 +101,14 @@ class _ImportPreviewScreenState extends State<ImportPreviewScreen> {
     if (saving) return;
     setState(() => saving = true);
     final preview = widget.batch.combined;
+    final matched = {
+      for (final MapEntry(:key, :value) in hints.entries)
+        if (transfers.containsKey(key) && value.matchedEntryId != null)
+          key: value.matchedEntryId!,
+    };
     await AppScope.read(
       context,
-    ).commitImport(preview, transfers: transfers, tags: tags);
+    ).commitImport(preview, transfers: transfers, tags: tags, matched: matched);
     if (!mounted) return;
     final l = context.l10n;
     final dupes = preview.duplicates.length;
@@ -164,6 +196,34 @@ class _ImportPreviewScreenState extends State<ImportPreviewScreen> {
                           selected: tags,
                         );
                         if (picked != null) setState(() => tags = picked);
+                      },
+                    ),
+                    const SizedBox(height: 14),
+                  ],
+                  for (final MapEntry(key: walletId, value: rowIds)
+                      in looseLoads.entries) ...[
+                    Builder(
+                      builder: (context) {
+                        final wallet =
+                            store.bookById(walletId)?.name ?? walletId;
+                        final allMarked = rowIds.every(transfers.containsKey);
+                        return _TagAllButton(
+                          icon: LucideIcons.arrowLeftRight,
+                          background: c.blueSoft,
+                          foreground: c.blue,
+                          label: allMarked
+                              ? l.importLoadsMarked(rowIds.length, wallet)
+                              : l.importMarkLoads(rowIds.length, wallet),
+                          onTap: () => setState(() {
+                            for (final id in rowIds) {
+                              if (allMarked) {
+                                transfers.remove(id);
+                              } else {
+                                transfers[id] = walletId;
+                              }
+                            }
+                          }),
+                        );
                       },
                     ),
                     const SizedBox(height: 14),
@@ -307,13 +367,13 @@ class _ImportPreviewScreenState extends State<ImportPreviewScreen> {
                         currency: currency,
                         transferTo: hint == null
                             ? null
-                            : store.bookById(hint)?.name,
+                            : store.bookById(hint.bookId)?.name,
                         isTransfer: transfers.containsKey(entry.id),
                         onTransfer: hint == null
                             ? null
                             : () => setState(() {
                                 if (transfers.remove(entry.id) == null) {
-                                  transfers[entry.id] = hint;
+                                  transfers[entry.id] = hint.bookId;
                                 }
                               }),
                       );
@@ -582,16 +642,25 @@ class _PreviewRow extends StatelessWidget {
 }
 
 class _TagAllButton extends StatelessWidget {
-  const _TagAllButton({required this.label, required this.onTap});
+  const _TagAllButton({
+    required this.label,
+    required this.onTap,
+    this.icon,
+    this.background,
+    this.foreground,
+  });
 
   final String label;
   final VoidCallback onTap;
+  final IconData? icon;
+  final Color? background;
+  final Color? foreground;
 
   @override
   Widget build(BuildContext context) {
     final c = context.pf;
     return Material(
-      color: c.tagSoft,
+      color: background ?? c.tagSoft,
       borderRadius: BorderRadius.circular(16),
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
@@ -600,14 +669,18 @@ class _TagAllButton extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           child: Row(
             children: [
-              Icon(LucideIcons.hash, size: 18, color: c.tag),
+              Icon(
+                icon ?? LucideIcons.hash,
+                size: 18,
+                color: foreground ?? c.tag,
+              ),
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
                   label,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: pfText(14.5, weight: w900, color: c.tag),
+                  style: pfText(14.5, weight: w900, color: foreground ?? c.tag),
                 ),
               ),
               Icon(LucideIcons.chevronRight, size: 18, color: c.tag),

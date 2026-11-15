@@ -186,9 +186,6 @@ class AppLocalizationsNe extends AppLocalizations {
   String get seeAll => 'सबै';
 
   @override
-  String get calendar => 'पात्रो';
-
-  @override
   String get settings => 'सेटिङ';
 
   @override
@@ -1285,6 +1282,41 @@ class AppLocalizationsNe extends AppLocalizations {
   }
 
   @override
+  String get settingsReminder => 'दैनिक रिमाइन्डर';
+
+  @override
+  String get reminderChangeTime => 'समय बदल्नुहोस्';
+
+  @override
+  String get reminderTitle => 'आजको खर्च';
+
+  @override
+  String get reminderBody => 'आज के खर्च भयो, एक मिनेट निकालेर टिप्नुहोस्।';
+
+  @override
+  String get reminderNoPermission =>
+      'फोनको सेटिङमा Paisa Flow का सूचना बन्द छन्।';
+
+  @override
+  String get reminderOffToast => 'दैनिक रिमाइन्डर बन्द गरियो';
+
+  @override
+  String reminderOnToast(String time) {
+    return 'दैनिक रिमाइन्डर $time मा सेट भयो';
+  }
+
+  @override
+  String get settingsMonthStart => 'महिना सुरु हुने दिन';
+
+  @override
+  String settingsMonthStartValue(int day) {
+    return 'दिन $day';
+  }
+
+  @override
+  String get settingsMonthStartTitle => 'महिना कुन दिनबाट गन्ने…';
+
+  @override
   String get settingsDefaultCurrency => 'नयाँ खाताको पूर्वनिर्धारित मुद्रा';
 
   @override
@@ -2048,6 +2080,16 @@ class AppLocalizationsNe extends AppLocalizations {
   @override
   String tagRenameTitle(String tag) {
     return '#$tag को नाम बदल्नुहोस्';
+  }
+
+  @override
+  String importMarkLoads(int count, String account) {
+    return '$count वालेट टप-अपलाई $account मा ट्रान्सफर बनाउनुहोस्';
+  }
+
+  @override
+  String importLoadsMarked(int count, String account) {
+    return '$count टप-अप $account मा ट्रान्सफर बनाइयो — फिर्ता गर्न थिच्नुहोस्';
   }
 
   @override
@@ -3016,6 +3058,11 @@ class AppLocalizationsNe extends AppLocalizations {
   @override
   String budgetScopeAll(String currency) {
     return 'सबै $currency खाता';
+  }
+
+  @override
+  String budgetPeriod(String from, String to) {
+    return '$from – $to';
   }
 
   @override

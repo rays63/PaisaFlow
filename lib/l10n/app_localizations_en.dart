@@ -189,9 +189,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get seeAll => 'See all';
 
   @override
-  String get calendar => 'Calendar';
-
-  @override
   String get settings => 'Settings';
 
   @override
@@ -1294,6 +1291,41 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get settingsReminder => 'Daily reminder';
+
+  @override
+  String get reminderChangeTime => 'Change the time';
+
+  @override
+  String get reminderTitle => 'Today\'s spending';
+
+  @override
+  String get reminderBody => 'Take a minute to note what you spent today.';
+
+  @override
+  String get reminderNoPermission =>
+      'Notifications are off for Paisa Flow in the phone\'s settings.';
+
+  @override
+  String get reminderOffToast => 'Daily reminder turned off';
+
+  @override
+  String reminderOnToast(String time) {
+    return 'Daily reminder set for $time';
+  }
+
+  @override
+  String get settingsMonthStart => 'Month starts on';
+
+  @override
+  String settingsMonthStartValue(int day) {
+    return 'Day $day';
+  }
+
+  @override
+  String get settingsMonthStartTitle => 'Count a month from day…';
+
+  @override
   String get settingsDefaultCurrency => 'Default currency for new accounts';
 
   @override
@@ -2062,6 +2094,16 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String tagRenameTitle(String tag) {
     return 'Rename #$tag';
+  }
+
+  @override
+  String importMarkLoads(int count, String account) {
+    return 'Mark $count wallet top-ups as transfers to $account';
+  }
+
+  @override
+  String importLoadsMarked(int count, String account) {
+    return '$count top-ups marked as transfers to $account — tap to undo';
   }
 
   @override
@@ -3092,6 +3134,11 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String budgetScopeAll(String currency) {
     return 'All $currency accounts';
+  }
+
+  @override
+  String budgetPeriod(String from, String to) {
+    return '$from – $to';
   }
 
   @override

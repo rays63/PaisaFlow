@@ -17,18 +17,31 @@ class CategoryRule {
 
 const categoryRules = [
   CategoryRule('Salary', ['salary'], type: TransactionType.cashIn),
+  // Bank interest and the tax withheld on it ("Int.Pd", "WTax.Pd").
+  CategoryRule('Interest', ['Int Pd'], type: TransactionType.cashIn),
+  CategoryRule('Tax', ['WTax'], type: TransactionType.cashOut),
   CategoryRule('Utilities', [
     'NEA',
     'Khanepani',
+    'utilities',
   ], type: TransactionType.cashOut),
   CategoryRule('Cellular topup', [
     'NTC',
     'Ncell',
     'topup',
   ], type: TransactionType.cashOut),
+  CategoryRule('Dividend', ['dividend'], type: TransactionType.cashIn),
+  CategoryRule('Cash withdrawal', [
+    'ATM',
+    'CWDR',
+  ], type: TransactionType.cashOut),
   CategoryRule('Shopping', ['Daraz'], type: TransactionType.cashOut),
   CategoryRule('Cafe', ['cafe'], type: TransactionType.cashOut),
-  CategoryRule('Food', ['momo', 'restaurant'], type: TransactionType.cashOut),
+  CategoryRule('Food', [
+    'momo',
+    'restaurant',
+    'food',
+  ], type: TransactionType.cashOut),
 ];
 
 /// The category of the first rule matching [text], or null.

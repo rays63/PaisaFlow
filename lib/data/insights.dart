@@ -166,16 +166,24 @@ class Place {
 }
 
 class Insights {
-  Insights(this.entries, {DateTime? now}) : now = now ?? DateTime.now();
+  Insights(this.entries, {DateTime? now, this.startDay = 1})
+    : now = now ?? DateTime.now();
 
   final List<LedgerTransaction> entries;
   final DateTime now;
 
+  /// The day a money month begins; an anchor's month runs from this day to
+  /// the day before it next month. The calendar ([month]) keeps real dates.
+  final int startDay;
+
   /// Opening balances and transfers aren't income or spending.
   static bool _isOpening(LedgerTransaction entry) => !entry.countsAsFlow;
 
-  bool _inMonth(DateTime date, DateTime month) =>
-      date.year == month.year && date.month == month.month;
+  bool _inMonth(DateTime date, DateTime month) {
+    final start = DateTime(month.year, month.month, startDay);
+    final end = DateTime(month.year, month.month + 1, startDay);
+    return !date.isBefore(start) && date.isBefore(end);
+  }
 
   List<Breakdown> _rank(Map<String, double> values) {
     final total = values.values.fold(0.0, (s, v) => s + v);
@@ -201,12 +209,19 @@ class Insights {
 
   /// Day-by-day spending for [month] against the month before.
   PaceSummary pace(DateTime month) {
-    final days = DateTime(month.year, month.month + 1, 0).day;
+    final start = DateTime(month.year, month.month, startDay);
+    final end = DateTime(month.year, month.month + 1, startDay);
     final previous = DateTime(month.year, month.month - 1);
-    final lastDays = DateTime(previous.year, previous.month + 1, 0).day;
+    final days = end.difference(start).inDays;
+    final lastDays = start
+        .difference(DateTime(previous.year, previous.month, startDay))
+        .inDays;
     final current = _inMonth(now, month);
-    final through = current ? now.day : (month.isAfter(now) ? 0 : days);
+    final through = current
+        ? now.difference(start).inDays + 1
+        : (start.isAfter(now) ? 0 : days);
     List<double> cumulative(DateTime m, int length) {
+      final from = DateTime(m.year, m.month, startDay);
       final daily = List<double>.filled(length, 0);
       for (final e in entries) {
         if (_isOpening(e) ||
@@ -214,8 +229,8 @@ class Insights {
             !_inMonth(e.occurredAt, m)) {
           continue;
         }
-        final day = e.occurredAt.day;
-        if (day <= length) daily[day - 1] += e.amount;
+        final day = e.occurredAt.difference(from).inDays;
+        if (day >= 0 && day < length) daily[day] += e.amount;
       }
       var run = 0.0;
       return [for (final v in daily) run += v];

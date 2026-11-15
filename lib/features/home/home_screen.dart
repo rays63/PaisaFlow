@@ -130,12 +130,13 @@ class _TotalCard extends StatelessWidget {
         if (book.currency == home) book.id,
     };
     final now = DateTime.now();
+    final (periodStart, periodEnd) = store.periodOf(store.periodAnchor(now));
     var monthIn = 0.0, monthOut = 0.0;
     for (final entry in store.transactions) {
       if (!entry.countsAsFlow ||
           !nprIds.contains(entry.bookId) ||
-          entry.occurredAt.year != now.year ||
-          entry.occurredAt.month != now.month) {
+          entry.occurredAt.isBefore(periodStart) ||
+          !entry.occurredAt.isBefore(periodEnd)) {
         continue;
       }
       if (entry.type == TransactionType.cashIn) {
@@ -145,7 +146,7 @@ class _TotalCard extends StatelessWidget {
       }
     }
     final totals = store.totalsFor(home);
-    final month = DateFormat('MMM').format(now);
+    final month = DateFormat('MMM').format(periodStart);
     final others = store.accountCurrencies.where((code) => code != home);
     final count = nprIds.length;
 

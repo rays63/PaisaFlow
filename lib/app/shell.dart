@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import '../core/reminder.dart';
+import '../data/app_store.dart';
 import '../data/models.dart';
 import '../features/books/books_screen.dart';
 import '../features/home/home_screen.dart';
@@ -23,6 +25,21 @@ class AppShell extends StatefulWidget {
 
 class _AppShellState extends State<AppShell> {
   final tab = ValueNotifier(ShellTab.home);
+
+  @override
+  void initState() {
+    super.initState();
+    // Re-worded for the current language, and heals a cleared schedule.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final l = context.l10n;
+      Reminder.sync(
+        AppScope.read(context).reminderMinutes,
+        title: l.reminderTitle,
+        body: l.reminderBody,
+      );
+    });
+  }
 
   @override
   void dispose() {

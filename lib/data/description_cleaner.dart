@@ -1,12 +1,23 @@
+import 'models.dart';
+
 /// Turns a bank's raw transaction description into a short, readable title
 /// that starts with how the money moved, e.g.
 /// `QR PAYMENT-2308…ue2W, MEGA MART NAGAUN` → `QR · Mega Mart Nagaun`.
-/// Unknown descriptions only get their spacing tidied.
-String cleanDescription(String raw) {
+/// Unknown descriptions only get their spacing tidied. [type] picks the
+/// other person in descriptions that name both sides of a transfer.
+String cleanDescription(String raw, {TransactionType? type}) {
   final text = raw
       .replaceAll(RegExp(r'\s+'), ' ')
       .trim()
       .replaceAll(RegExp(r'[\s,|]+$'), '');
+  // Global IME mobile banking: "MOS:Trf to A from B:<purpose><ref>:…".
+  final transfer = _re(
+    r'^MOS:Trf to (.+?) from (.+?):(.*?)[0-9A-Z]{11}:\d+:\d+:\w+$',
+  ).firstMatch(text);
+  if (transfer != null) {
+    final other = type == TransactionType.cashIn ? transfer[2] : transfer[1];
+    return _join('Mobile banking', [other, transfer[3]]);
+  }
   for (final rule in _rules) {
     final match = rule.pattern.firstMatch(text);
     if (match != null) {
@@ -15,6 +26,49 @@ String cleanDescription(String raw) {
     }
   }
   return text;
+}
+
+/// Fallback titles the cleaner produces when a description carries no
+/// merchant or person. Too generic to learn a category from.
+const genericImportTitles = {
+  'imported transaction',
+  'qr payment',
+  'esewa payment',
+  'esewa load',
+  'esewa withdrawal',
+  'khalti load',
+  'ips transfer',
+  'fonepay transfer',
+  'mobile banking',
+  'atm withdrawal',
+  'remittance',
+  'interest',
+  'tax on interest',
+  'ibft charges',
+};
+
+/// How the money moved, read from the bank's code at the start of the
+/// description: 'QR', 'connectIPS', 'Fonepay transfer', 'Mobile banking',
+/// 'ATM', 'eSewa' or 'Khalti'. Null when no code is recognised; the
+/// importer then falls back to the bank's name.
+String? channelOf(String raw) {
+  final text = raw.replaceAll(RegExp(r'\s+'), ' ').trim();
+  bool has(String pattern) =>
+      RegExp(pattern, caseSensitive: false).hasMatch(text);
+  // QR before Mobile banking: Nabil writes QR as "MPAYFPQR".
+  if (has(r'^(QR PAYMENT|MPAY ?FPQR|NQR-|FPS:FPQR)')) return 'QR';
+  // eSewa before Mobile banking: Global IME writes eSewa as "MOS:eSewa".
+  if (has(r'^(Load ?eSewa|eSewa Load|ESWWD:|MOS:eSewa)')) return 'eSewa';
+  if (has(r'^(Khalti Load|Load Wallet Khalti)')) return 'Khalti';
+  // Plain IPS/<bank>/ credits are bulk interbank payments (dividends,
+  // salaries); close enough to connectIPS that they share one mode.
+  if (has(r'^(c?IPS/|CIPS)') || has(r'ACCOUNTFT:')) return 'connectIPS';
+  if (has(r'^(FPY|FON|FBS):IBFT') || has(r'\|\s*IBFT')) {
+    return 'Fonepay transfer';
+  }
+  if (has(r'^(MoBank|MPAY[ A-Z0-9]|MOS:Trf)')) return 'Mobile banking';
+  if (has(r'^(ATM WDL|CWDR/)')) return 'ATM';
+  return null;
 }
 
 class _Rule {
@@ -58,6 +112,31 @@ String _nice(String value) => value
     .join(' ');
 
 final _rules = <_Rule>[
+  // Global IME Fonepay QR: "FPS:FPQR:<id>:<n>:<phone>:<bank>:MERCHANT" with
+  // the remark ("111142-<ref>") run on.
+  _Rule(
+    _re(r'^FPS:FPQR:(?:[^:]*:){4}(.*?)(?:\d{6}-\S*)?$'),
+    (m) => _join('QR', [m[1]]).ifEmpty('QR payment'),
+  ),
+  // Global IME eSewa payments: "MOS:eSewa:<id>:<remark><ref>:<phone>:…".
+  _Rule(
+    _re(r'^MOS:eSewa:\d+:(.*?)[0-9A-Z]{11}:\d+:\d+:\w+$'),
+    (m) => _join('eSewa', [m[1]]).ifEmpty('eSewa payment'),
+  ),
+  _Rule(_re(r'^MOS:eSewa'), (_) => 'eSewa payment'),
+  // Global IME connectIPS: "CIPS/Others: <acct>/<via>/MERCHANT/<bank>…".
+  _Rule(
+    _re(r'^CIPS/[^:]*:\s*\d+/[^/]*/([^/]*)'),
+    (m) => _join('IPS', [m[1]]).ifEmpty('IPS transfer'),
+  ),
+  // Interest and the tax on it: "<account>:Int.Pd:…", "<account>:WTax.Pd:…".
+  _Rule(_re(r'^\d+:Int\.Pd:'), (_) => 'Interest'),
+  _Rule(_re(r'^\d+:WTax\.Pd:'), (_) => 'Tax on interest'),
+  // NMB Fonepay interbank: "FBS:IBFT:<id>:<n>:<bank>:NAME".
+  _Rule(
+    _re(r'^FBS:IBFT:(?:[^:]*:)*([^:]*)$'),
+    (m) => _join('Fonepay', [m[1]]).ifEmpty('Fonepay transfer'),
+  ),
   // NIC Asia QR: "QR PAYMENT-<id>, MERCHANT".
   _Rule(_re(r'^QR PAYMENT-\S*?,\s*(.*)$'), (m) => _join('QR', [m[1]])),
   _Rule(_re(r'^QR PAYMENT'), (_) => 'QR payment'),
